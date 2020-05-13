@@ -1,0 +1,93 @@
+hackerrank problem: https://www.hackerrank.com/challenges/robot
+
+two arrays of integers V = V1 ... Vn, P = P1 .... Pn
+
+then consider function
+
+score = 0
+
+int Go(step, energy) {
+    if (step == N) {
+        score += V[step];
+        return (score);
+    }
+    else {
+        int way = random(1, 2); #pick 1 or 2 randomly, assume equal probability
+        if (way == 1) {
+            score += V[step];
+        }
+        else {
+            energy = P[step];
+        }
+        if (energy > 0) {
+            Go(step + 1, energy - 1);
+        }
+        else {
+            KillTheWorld();
+        }
+    }
+}
+
+problem: determine maximum possible score at end by calling Go(1,0)
+inputs: N, V vector, P vector
+
+constraints 1 <= N <= 5 x 10^5
+0 <= Vi <= 10^9
+0 <= Pi <= 10^5
+
+it's unclear what KillTHeWorld() does - I'll assume you get score -inf so it's never in the max path.
+
+approach:
+
+read in the input lines into N, V, P
+
+represent state and transitions:
+score accumulates on each call
+step = N -> add Vn to score, done
+step < N:
+    50 % chance to do either of:
+      1: add V[step] to score
+      2: or energy becomes P[step]
+    then, Go(step +1, energy -1)
+      KillTHeWorld() if energy =  - i interpret this as game over, score -inf.
+
+we can view step as postion in the arrays- must be 1 to N. 
+    always increases by 1, eventually hits N which ends
+energy decreases by one each time until it hits 0 -> KillTHeWOrld, or reach step = N first.
+    also gets reset to P[step] sometimes
+
+
+can view each state as (step, energy) - is score part of it too?
+
+transitions for (step, energy)
+  if step = N: done, score V[n]
+  else if energy = 0: done, score = -inf      - but only if it doesnt hit case 2
+  else:
+      choice 1:   (step, energy) -> (step + 1, energy -1), score V[step]
+      choice 2:   (step, energy) -> (step - 1, P[step] - 1), score 0
+
+
+this is MDP problem: state -> state based on probability, with cumulative reward.
+
+model: states, transitions, rewards.
+
+transitions: list of states that can come after this state: can be 2 or 0 states.
+rewards: list of rewards that can happen from this state: each reward goes with a transition.
+    maybe combine these in one function since the resulting state and reward go together.
+
+maxVal(state): function mapping state to maximum vallue it can get.
+
+outcomes(state) : list of (new state, reward) that can happen from this state.
+
+outcomes(N, energy) = (None, V[N])     #represent finished with none, stop evaluation there.
+outcomes(step energy) = ( [ ( (step+1, energy - 1), V[step]) , ( (step + 1, P[step] -1), 0)]
+    except need to check for KillTheWorld at energy = 0 - get reward -inf.
+
+outcomes could be a function on state, or method of state class
+
+return a list of the posible (state, reward) results following this state.
+should match the strucure of Go method.
+
+
+state is a (step, energy) tuple, or None
+outcome of a state is a (newstate, score) tuple where newstate is a state.
