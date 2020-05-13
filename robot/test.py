@@ -6,6 +6,7 @@ import robot_tree
 import robot_tree_stack_contains
 import robot_tree_wasqueued
 import robot_forward
+import robot_forward_comprehensions
 
 start = (1,0)
 conf1 = (4, [4,0,4,3], [2,2,0,4])
@@ -28,8 +29,10 @@ def testRandom(N, maxV, maxP):
     #             ("check stack contains with a set", robot_tree_wasqueued.robot),
     #             ("direct forward iteration", robot_forward.robot)]
 
-    methods = [("no check for duplicates in stack", robot_tree_no_check.robot),
-                ("direct forward iteration", robot_forward.robot)]
+    # methods = [("no check for duplicates in stack", robot_tree_no_check.robot),
+    #             ("direct forward iteration", robot_forward.robot)]
+
+    methods = [("direct forward iteration", robot_forward.robot), ("direct forward with comphrehensions", robot_forward_comprehensions.robot)]
 
     for name, function in methods:
         print("\nmethod: "+name)
