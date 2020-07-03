@@ -1,0 +1,25 @@
+practice problem from "competitive programming" book
+
+find all pairs of 5 digit numbers, together using the digits 0-9 exactly once, where one divides the other with ratio 2 <= N <= 79
+that is, abcde / fghij = N , where the letters are distinct digits 0-9
+
+obvious choice is to generate and check all permutations - efficient enough?
+
+I calculated: 10! = 3,628,800 possible arrangements of the 10 digits (thus that many pairs)
+for one 5-digit number from unique digits, 10*9*8*7*6 = 30,240 possibilities 
+(then the other one has 5! = 120 possibilities)
+
+largest allowed number is 98756, smallest is 01234 (can start with 0) 
+so max ratio is 98765/01234 = 80.03
+
+since ratio is at least 2, first digit must at least double: a >= 2f in abcde / fghij = 2
+only possible for f <= 4
+f = 0 , a = any
+f = 1, a >= 2
+f = 2, a >= 4
+f = 3, a >= 6
+f = 4, a >= 8
+total: (9+8+6+4+2)*8! = 1,169,280: about 1/3 of 10!
+
+try using libraries like python itertools to get the permutations
+or manually calculate them

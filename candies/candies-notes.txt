@@ -1,0 +1,187 @@
+candies problem: https://www.hackerrank.com/challenges/candies
+
+_____PROBLEM STATEMENT_____
+
+children in an ordered line
+each child has a rating score "according to performance in class" 
+	are rating values unique or can they be the same? are they numbers 1-n etc?
+give at least 1 candy to each child
+2 adjacent children - higher rating one must get more 
+	what if same rating? then I assume allowed to be same, or not same
+	example with ratings [1,2,2] has optimal distribution [1,2,1] - can be same rating, or not.
+minimize the total candies used
+
+ex: studenst ratings are [4,6,4,5,6,2], give candies by amount [1,2,1,2,3,1], total 10
+	from this I see ratings are not unique and not a range 1-n
+
+inputs:
+	n integer, # children
+	arr: array of ratings which are integers
+output: min number of candies
+
+don't have to say how much to give to each child, just the total number.
+
+_____IDEAS_______ 
+
+
+__direct single-pass approach:__
+
+first child gets 1
+next child gets one less if lower ranking,
+	or one more if higher ranking,
+	if same ranking, give one less since we want to minimize
+		not sure if always safe to do this
+repeat this over whole array until end
+then some will have negative numbers. so add (1-vmin) to all, where vmin is smallest value
+
+check on example 0: arr = [1,2,2]
+
+first value: 1, next is 2 since higher, next is 1 (same rank, so reduce by 1)
+	min value is 1, so already normalized - [1,2,1] correct
+
+example 0 backwards: arr = [2,2,1].
+the problem is invariant under reversing (adjacents are same) 
+-reverse rating array should give reverse candy array, which is also [1,2,1] in this case.
+check: start with 1, next is 0 (reduce by 1 if same), next is -1 (reduce by one since less) - > 1,0,-1
+then have to add 2 to all : 3, 2, 1
+this satisfies the rules on adjacent child, but not minimal: should be 1,2,1 instead.
+
+so this is a problem - when adjacent children have same rating, either is allowed to get more candy,
+need to decide which way minimizes total candy
+
+also my assumption of adjacent children always having 1 more or one less candy may be wrong:
+examle 1 says ratings [2,4,2,6,1,7,8,9,2,1] has optimal distribution [1,2,1,2,1,2,3,4,2,1]
+	- has jump of 2 between 2 and 4.
+	largest strictly ascending/descending sequence makes a large number.
+
+__direct multi-pass approach:__
+give one to each child
+repeatedly go over list:
+	each adjacent pair: higher ranking one gets one more candy
+	if same ranking, don't do anything.
+
+could do each pass "in place" or based on previous pass - assume previous pass for now.
+
+complexity: if rankings are 1 to n in order, takes n passes -> n squared complexity probably
+	dynamic programming will probably be more efficient
+
+ex 0: ratings:  1,2,2
+initial candies 1,1,1
+first pass: 	1,2,1
+second pass: all good, so done. -
+	check if same candies as last cycle, or if any values were updated
+
+ex 0 reversed: 	2,2,1  (should get 1,2,1)
+initial candies 1,1,1
+first pass: 	1,2,1
+second pass: all good, so done: get 1,2,1 as expected.
+
+ex 2: ratings =  2,4,3,5,2,6,4,5  , expect distribution 1,2,1,2,1,2,1,2
+
+initial candies: 1,1,1,1,1,1,1,1
+first pass: 	 1,3,1,3,1,3,1,2
+
+as stated above, I would be double-adding if it's more than both adjacents, which is wrong.
+
+revise: 
+one pass: for each child, if higher ranking than one or more neighbor, and only same or equal candies as the neighbor, get one more candy.
+
+then we would get 1,2,1,2,1,2,1,2 for ex 2.
+ex 0 andwers don't change - stil good.
+
+ex 1: ratings = 2,4,2,6,1,7,8,9,2,1
+initial candies:1,1,1,1,1,1,1,1,1,1
+first pass:	1,2,1,2,1,2,2,2,2,1
+second pass:	1,2,1,2,1,2,3,3,2,1	only using first pass results in this, not earlier parts of second pass (could try that too)
+third pass:	1,2,1,2,1,2,3,4,2,1
+fourth pass: same, done.
+
+this seems correct, just messy and maybe inefficient.
+
+___straight runs approach:___
+
+break the ratings array into the strictly increasing / strictly decreasing sequences
+strictly increasing run of lenth k: candy amounts are 1, 2 ... k
+stricly decreasing run of length k: candy amounts are k, k-1, ... 1
+
+go through in one pass and identify strictly increasing / strictly decreasing runs
+run of length k will have candy amounts 1-k with total k(k+1)/2
+
+start on increasing
+increasing: count up k until rating decreases or same, switch to decreasing, increment total by k(k+1)/2
+decreasing: count up k until rating increases or same, switch to increasing, increment total by k(k+1)/2
+
+same rating - should end the block since scores could increase or decrease from there.
+call it increasing or decreasing? could do either, then if wrong, it just changes again on next number
+
+value can overlap - mainly need to check if the 1 goes into that chunk or not, adjust total accordingly.
+
+actually runs split better if we mak sure they are always 1-k - then don't have to alternate increasing/decreasing
+first one not increasing (or decreasing) ends the block
+next one after that sets  the new block pattern
+
+state = neutral
+prev = list[0]
+count = 1
+end = false
+total = 0
+for i from 1 to list length -1:
+	current = list[i]
+	if neutral:
+		if current > prev: state = increasing, count +=1
+		if current < prev: state = decreasing, count += 1
+		if current == prev: end = true
+	elif increasing:
+		if current > prev: count +=1
+		else: end = true, state = neutral
+	elif decreasing:
+		if current < prev: count += 1
+		else: end = true
+	if end:
+		total += count * (count+1)/2
+		count = 1
+		state = neutral
+		end = false
+	prev = current
+#add the last block at end of list
+total += count * (count+1)/2
+
+
+___iteratively lowering approach___:
+
+another way of looking at this: candy distribution array looks like the ratings array in terms of increasing/decreasing patterns,
+	except all valleys are 1 and slope of each part is 1 (with jump on one side only)
+
+the ratings array itself can be a candy distribution array satisfying the neighbor rules, but is not minimal
+can I iteratively lower the values while preserving neighbor rules?
+	all valleys (including endpoints less than the one adjacent neighbor) are 1.
+	each is only one larger than its next smallest neighbor.
+
+__dynamic programming approach:__
+
+use sub-problems of first n (or last n, etc) elements of arr
+
+add one more element to rank array:
+	more than previous element:
+	less than previous element:
+	same as previous element
+
+
+___"divide and conquer" approach___
+
+split lists in half and solve on each, then combine
+assumption: already have optimal assignments (or minimum total candy) on each half.
+
+combine them: need to fix the new neighbors.
+
+	already fine if same rank, or if higher rank one has more candy
+		then just combine the assignment arrays, or add the minimum totals.
+
+	if the lower rating one has equal or less candy to higher rating one, need to fix:
+	fix by adding candy only, so the half with lower rating end stays the same.
+	higher rating one gets plus one candy
+	but then need to update for consistency within that half
+		worst case, adding one to each child in that half works. but not always necessary
+		ex: assignments end in 3,4,2,1. increase the 1 to 2. now it ends in 3,4,3,2 - the 4-2 jump stops the +1 propagation.
+		assignments ending in 1,2,1  , last 1 becomes 2: now ends in 1,3,2
+		ending in 5,4,3,2,1 , increase the last 1 to 2: now ends in 6,5,4,3,2    - propagates up until it decreases or jumps 2.			
